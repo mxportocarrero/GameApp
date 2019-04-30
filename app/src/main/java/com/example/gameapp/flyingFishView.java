@@ -1,6 +1,7 @@
 package com.example.gameapp;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -9,6 +10,7 @@ import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
 public class flyingFishView extends View
 {
@@ -21,6 +23,19 @@ public class flyingFishView extends View
 
     private boolean touch = false;
 
+    private int yelloX, yellowY, yellowSpeed = 16;
+    private Paint yellowPaint = new Paint();
+
+    private int greenX, greenY, greenSpeed = 20;
+    private Paint greenPaint = new Paint();
+
+    private int num_redBalls = 4;
+    private int redX[],redY[], redSpeed = 25;
+    private Paint redPaint = new Paint();
+
+
+
+
 
 
     private Bitmap backgroundImage;
@@ -28,6 +43,9 @@ public class flyingFishView extends View
     private Paint scorePaint = new Paint();
 
     private Bitmap life[] = new Bitmap[2];
+
+
+    private int score,lifeCounter;
 
     // Constructor
     public flyingFishView(Context context)
@@ -49,8 +67,21 @@ public class flyingFishView extends View
 
         fishY = 550;
 
+        // Balls
+        yellowPaint.setColor(Color.YELLOW);
+        yellowPaint.setAntiAlias(false);
 
+        greenPaint.setColor(Color.GREEN);
+        greenPaint.setAntiAlias(false);
 
+        redPaint.setColor(Color.RED);
+        redPaint.setAntiAlias(false);
+
+        score = 0;
+        lifeCounter = 4;
+
+        redX = new int[num_redBalls];
+        redY = new int[num_redBalls];
     }
 
     @Override
@@ -91,11 +122,85 @@ public class flyingFishView extends View
             canvas.drawBitmap(fish[0],fishX,fishY,null);
         }
 
-        canvas.drawText("score : ",20,60, scorePaint);
+        //YellowBall
+        yelloX = yelloX - yellowSpeed;
 
-        canvas.drawBitmap(life[0],580, 10, null);
-        canvas.drawBitmap(life[0],680, 10, null);
-        canvas.drawBitmap(life[0],780, 10, null);
+        if (hitBallChecker(yelloX,yellowY))
+        {
+            score = score + 10;
+            yelloX = -100;
+        }
+
+        if (yelloX < 0)
+        {
+            yelloX = canvasWidth + 21;
+            yellowY = (int) Math.floor(Math.random() * (maxFishY - minFishY)) + minFishY;
+
+        }
+
+        canvas.drawCircle(yelloX,yellowY,25,yellowPaint);
+
+        // Green Ball
+        greenX = greenX - greenSpeed;
+
+        if (hitBallChecker(greenX,greenY))
+        {
+            score = score + 50;
+            greenX = -100;
+        }
+
+        if (greenX < 0)
+        {
+            greenX = canvasWidth + 21;
+            greenY = (int) Math.floor(Math.random() * (maxFishY - minFishY)) + minFishY;
+        }
+
+        canvas.drawCircle(greenX,greenY,15,greenPaint);
+
+        for (int i = 0; i < num_redBalls; i++)
+        {
+            redX[i] = redX[i] - redSpeed;
+            if (hitBallChecker(redX[i],redY[i]))
+            {
+                redX[i] = -100;
+                lifeCounter--;
+
+                if (lifeCounter == 0)
+                {
+                    Toast.makeText(getContext(),"Game Over",Toast.LENGTH_SHORT).show();
+
+                    Intent gameOverIntent = new Intent(getContext(),GameOverActivity.class);
+                    gameOverIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+                    gameOverIntent.putExtra("score",score);
+
+                    getContext().startActivity(gameOverIntent); // Por que estamos en una clase
+
+
+                }
+            }
+
+            if (redX[i]< 0)
+            {
+                redX[i] = canvasWidth + 21 + (int)Math.floor(Math.random() * 200);
+                redY[i] = (int) Math.floor(Math.random() * (maxFishY - minFishY)) + minFishY;
+            }
+
+            canvas.drawCircle(redX[i],redY[i],30,redPaint);
+        } // Fin de dibujar los obstaculos
+
+
+        canvas.drawText("score : " + score,20,60, scorePaint);
+
+        // Drawing the hearts
+        for(int i = 0; i < 4; i++)
+        {
+            if (i  < lifeCounter)
+                canvas.drawBitmap(life[0],580 + i * 100, 10, null);
+            else
+                canvas.drawBitmap(life[1],580 + i * 100, 10, null);
+        }
+
     }
 
     @Override
@@ -108,4 +213,15 @@ public class flyingFishView extends View
         }
         return true;
     }
+
+    public boolean hitBallChecker(int x, int y)
+    {
+        if(fishX < x && x <(fishX + fish[0].getWidth()) && fishY < y && y < (fishY + fish[0].getHeight()))
+        {
+            return true;
+        }
+        return false;
+    }
+
+
 }
